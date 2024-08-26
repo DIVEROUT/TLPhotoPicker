@@ -153,6 +153,7 @@ open class TLPhotosPickerViewController: UIViewController {
     public weak var delegate: TLPhotosPickerViewControllerDelegate? = nil
     public weak var logDelegate: TLPhotosPickerLogDelegate? = nil
     open var selectedAssets = [TLPHAsset]()
+    public var defaultShowingDate: Date?
     public var configure = TLPhotosPickerConfigure()
     public var customDataSouces: TLPhotopickerDataSourcesProtocol? = nil
     
@@ -311,6 +312,7 @@ open class TLPhotosPickerViewController: UIViewController {
         super.viewDidLoad()
         makeUI()
         checkAuthorization()
+        scrollToDefaultDateIfNeeded()
     }
     
     override open func viewDidLayoutSubviews() {
@@ -425,8 +427,9 @@ open class TLPhotosPickerViewController: UIViewController {
         return false
     }
     
-    open func scrollToDate(date: Date) {
-        guard let asset = fetchClosestAsset(to: date),
+    private func scrollToDefaultDateIfNeeded() {
+        guard let scrollToDefaultDate = defaultShowingDate,
+              let asset = fetchClosestAsset(to: scrollToDefaultDate),
               let indexPath = findIndex(phAsset: asset) else { return }
         
         self.collectionView.scrollToItem(at: indexPath,
