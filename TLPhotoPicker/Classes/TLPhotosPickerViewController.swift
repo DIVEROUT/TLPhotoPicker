@@ -354,6 +354,57 @@ open class TLPhotosPickerViewController: UIViewController {
         }
     }
     
+    private func findIndex(phAsset: PHAsset) -> IndexPath? {
+        if
+            self.configure.groupByFetch != nil,
+            let indexPath = self.focusedCollection?.findIndex(phAsset: phAsset)
+        {
+            return indexPath
+        }
+        if
+            var index = self.focusedCollection?.fetchResult?.index(of: phAsset),
+            let focused = self.focusedCollection,
+            index != NSNotFound
+        {
+            index += (focused.useCameraButton) ? 1 : 0
+            return IndexPath(row: index, section: 0)
+        }
+        return nil
+    }
+    
+    private func fetchClosestAsset(to targetDate: Date) -> PHAsset? {
+        let fetchOptions = PHFetchOptions()
+        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: true)]
+        
+        // 设置一个日期范围，例如 +/- 1天
+        let startDate = Calendar.current.date(byAdding: .day, value: -1, to: targetDate)!
+        let endDate = Calendar.current.date(byAdding: .day, value: 1, to: targetDate)!
+        
+        fetchOptions.predicate = NSPredicate(format: "creationDate >= %@ AND creationDate <= %@", startDate as NSDate, endDate as NSDate)
+        
+        let fetchResult = PHAsset.fetchAssets(with: .image, options: fetchOptions)
+        
+        if fetchResult.count > 0 {
+            // 遍历以找到最接近的 asset
+            var closestAsset: PHAsset?
+            var smallestTimeInterval = TimeInterval.infinity
+            
+            fetchResult.enumerateObjects { asset, _, _ in
+                if let creationDate = asset.creationDate {
+                    let timeInterval = abs(creationDate.timeIntervalSince(targetDate))
+                    if timeInterval < smallestTimeInterval {
+                        smallestTimeInterval = timeInterval
+                        closestAsset = asset
+                    }
+                }
+            }
+            
+            return closestAsset
+        }
+        
+        return nil
+    }
+    
     open func deselectWhenUsingSingleSelectedMode() {
         if
             self.configure.singleSelectedMode == true,
@@ -372,6 +423,15 @@ open class TLPhotosPickerViewController: UIViewController {
             return true
         }
         return false
+    }
+    
+    open func scrollToDate(date: Date) {
+        guard let asset = fetchClosestAsset(to: date),
+              let indexPath = findIndex(phAsset: asset) else { return }
+        
+        self.collectionView.scrollToItem(at: indexPath,
+                                         at: .centeredVertically,
+                                         animated: true)
     }
 }
 
