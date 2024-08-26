@@ -312,7 +312,6 @@ open class TLPhotosPickerViewController: UIViewController {
         super.viewDidLoad()
         makeUI()
         checkAuthorization()
-        scrollToDefaultDateIfNeeded()
     }
     
     override open func viewDidLayoutSubviews() {
@@ -658,6 +657,7 @@ extension TLPhotosPickerViewController {
             self.focusedCollection = collection
             self.updateTitle()
             self.reloadCollectionView()
+            self.scrollToDefaultDateIfNeeded()
         }
     }
 }
